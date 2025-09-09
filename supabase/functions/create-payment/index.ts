@@ -145,7 +145,7 @@ serve(async (req) => {
 
     // Create Snap transaction with Midtrans (using sandbox for testing)
     console.log('Creating Midtrans Snap transaction...');
-    const midtransResponse = await fetch('https://app.sandbox.midtrans.com/snap/v1/transactions', {
+    const midtransResponse = await fetch('https://app.midtrans.com/snap/v1/transactions', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
