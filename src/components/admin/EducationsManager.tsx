@@ -282,7 +282,7 @@ const EducationsManager = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Kategori</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih kategori" />
@@ -307,7 +307,7 @@ const EducationsManager = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Tipe Konten</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih tipe konten" />
