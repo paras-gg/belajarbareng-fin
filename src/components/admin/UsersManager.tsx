@@ -50,13 +50,31 @@ const UsersManager = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all profiles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUsers(data || []);
+      if (profilesError) throw profilesError;
+
+      // Fetch all user roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Combine profiles with their roles
+      const usersWithRoles = (profilesData || []).map(profile => {
+        const userRole = rolesData?.find(r => r.user_id === profile.id);
+        return {
+          ...profile,
+          role: (userRole?.role || 'biasa') as 'biasa' | 'premium' | 'admin'
+        };
+      });
+
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -77,21 +95,41 @@ const UsersManager = () => {
     if (!editingUser) return;
 
     try {
-      const updateData: any = { role: data.role };
+      // Update profile's premium_until
+      const profileUpdateData: any = {};
       
       // Only include premium_until if role is premium and date is provided
       if (data.role === 'premium' && data.premium_until) {
-        updateData.premium_until = new Date(data.premium_until).toISOString();
+        profileUpdateData.premium_until = new Date(data.premium_until).toISOString();
       } else if (data.role !== 'premium') {
-        updateData.premium_until = null;
+        profileUpdateData.premium_until = null;
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', editingUser.id);
+      // Update profiles table if there are changes
+      if (Object.keys(profileUpdateData).length > 0) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update(profileUpdateData)
+          .eq('id', editingUser.id);
 
-      if (error) throw error;
+        if (profileError) throw profileError;
+      }
+
+      // Update role in user_roles table
+      // First, delete existing role
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', editingUser.id);
+
+      if (deleteError) throw deleteError;
+
+      // Then insert new role
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: editingUser.id, role: data.role });
+
+      if (insertError) throw insertError;
 
       toast({
         title: 'Berhasil',
@@ -308,7 +346,7 @@ const UsersManager = () => {
                               render={({ field }) => (
                                 <FormItem>
                                   <FormLabel>Role</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                   <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl>
                                       <SelectTrigger>
                                         <SelectValue placeholder="Pilih role" />

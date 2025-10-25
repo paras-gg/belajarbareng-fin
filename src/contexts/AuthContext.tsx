@@ -44,10 +44,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         console.error('Error fetching profile:', profileError);
+        return;
+      }
+
+      if (!profileData) {
+        console.error('Profile not found');
         return;
       }
 
@@ -56,16 +61,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (roleError) {
         console.error('Error fetching role:', roleError);
-        // Default to 'biasa' if no role found
+        // Default to 'biasa' if error occurred
         setProfile({ ...profileData, role: 'biasa' });
         return;
       }
 
-      setProfile({ ...profileData, role: roleData.role });
+      // Use role from user_roles table, or default to 'biasa' if not found
+      const role = roleData?.role || 'biasa';
+      setProfile({ ...profileData, role });
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
